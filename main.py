@@ -1,46 +1,78 @@
-# Wps ke liye algorithm
-
-from tkinter import *
+# playing audio wala algorithm
 import time
+import os
+from playsound import playsound
+import threading
 
-para = "India is one of the youngest superpowers in the world.\n The National bird of India is the peacock, which has\n a very colourful and beautiful tail. The national flower of\n India is Lotus. Lotus comes in many colours, white and pink \nbeing prominent.The National animal of India is the Royal\n Bengal tiger."
+text = open("book.txt",encoding="utf-8").read()     
+words_length = len(text.split())
+split = text.split()
+path = "Audio_tracks"
+dir_list = os.listdir(path)
+active = True
+pause_list = []
+status = ""
 
-words = len(para.split())
+def linear_search(list, n , key):
+    for i in range(0, n):  
+        if (list[i] == key):
+            return i
+    return -1 
 
-# Stop watch code starts:
+def play_sound(args):
+    playsound(args)
 
-def start():
-    global start_time
-    start_time = time.time()
+global i
+i = 0
+def Pause():
+    global active
+    active = False
+    status = "paused"
 
-def stop_show():
-    global end_time
-    end_time = time.time()
-    global elapsed_time
-    elapsed_time = end_time - start_time
-    print(f"Time elapsed: {round(elapsed_time, 2)}")
-    wps = words/elapsed_time
-    spw = elapsed_time/words
-    print(f"Your current WPS (Words per second): {round(wps, 2)}")  
-    print(f"Your current SPW (Seconds per word): {round(spw, 2)}")  
+def Play():
+    global active
+    active = True
+    status = "playing"
+    check_word()
 
-# UI code:
+def check_status():
+    if status == "paused":
+                  Play()
+    elif status == "playing":
+                  Pause()
 
-root = Tk()
+def check_word():
+    t1 = threading.Thread(target=check_status, args=())
+    t1.daemon = True
+    t1.start()
+    global active
+    while active:
+        global i
+        if status == "paused":
+            word = pause_list.pop()
+        else:
+            word = text.split()[i]
 
-para_label = Label(root, text=para, bg="red",
-                   font="comicsansms 23 bold", width=100, height=10)
-para_label.pack(fill=X)
+        pause_list.append(word)
+        file = word + '.mp3'
+        search_result = linear_search(dir_list, len(dir_list), file)
+        path = f"Audio_tracks\{file}"
+        time.sleep(0.2)
+        print(word)
+        if search_result == -1:
+            print("Audio not found")
+        else:
+            t2 = threading.Thread(target=play_sound, args=(path,))
+            t2.daemon = True
+            t2.start()
+        i += 1
 
-Start_btn = Button(root, text="Start", command=start,
-                   fg="red", width=25, height=5)
-Stop_btn = Button(root, text="Stop", fg="red",
-                  width=25, height=5, command=stop_show)
-
-Start_btn.pack(anchor=S, side=TOP)
-Stop_btn.pack(side=TOP, anchor=S)
-
-frame = Frame(bg="grey", )
-
-root.title("Readzy")
-root.mainloop()
+        if word == "(_stop_)":
+            active = False
+            break
+        
+        if status == "paused":
+                Play()
+        elif status == "playing":
+                Pause()
+check_word()
